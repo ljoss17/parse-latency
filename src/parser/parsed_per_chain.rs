@@ -23,7 +23,7 @@ struct PerChainTimerStatistics {
     q90: u128,
 }
 
-pub fn parse_per_chain_infos(infos: Vec<TimerInfo>) {
+pub fn parse_per_chain_infos_with_filter(infos: Vec<TimerInfo>) {
     let mut elapsed_values: HashMap<(String, String), Vec<u128>> = HashMap::new();
     for info in infos {
         let entry_identifier = (info.name, info.src_chain);
@@ -43,18 +43,25 @@ pub fn parse_per_chain_infos(infos: Vec<TimerInfo>) {
     for (name, chain) in elapsed_values.keys().sorted() {
         let mut values = elapsed_values[&(name.clone(), chain.clone())].clone();
         values.sort();
+        let mean = compute_mean(&values);
+        let std_dev = std_deviation(&values, mean);
+        let parsed_values: Vec<u128> = values
+            .iter()
+            .filter(|v| z_score(**v, mean, std_dev, 3.0))
+            .cloned()
+            .collect();
         let statistic = PerChainTimerStatistics {
             name: name.clone(),
             chain: chain.clone(),
-            count: values.len() as u128,
-            mean: compute_mean(&values),
-            min: compute_min(&values),
-            max: compute_max(&values),
-            q10: compute_percentile(&values, 0.1),
-            q25: compute_percentile(&values, 0.25),
-            q75: compute_percentile(&values, 0.75),
-            q90: compute_percentile(&values, 0.9),
-            median: compute_percentile(&values, 0.5),
+            count: parsed_values.len() as u128,
+            mean: compute_mean(&parsed_values),
+            min: compute_min(&parsed_values),
+            max: compute_max(&parsed_values),
+            q10: compute_percentile(&parsed_values, 0.1),
+            q25: compute_percentile(&parsed_values, 0.25),
+            q75: compute_percentile(&parsed_values, 0.75),
+            q90: compute_percentile(&parsed_values, 0.9),
+            median: compute_percentile(&parsed_values, 0.5),
         };
         statistics.push(statistic);
     }
@@ -64,7 +71,7 @@ pub fn parse_per_chain_infos(infos: Vec<TimerInfo>) {
         Err(_) => format!("{statistics:?}"), // Fallback to debug printing
     };
 
-    let file_name = Path::new("outputs/per_chain_statistics.json");
+    let file_name = Path::new("outputs/parsed_per_chain_statistics.json");
 
     let mut file = OpenOptions::new()
         .write(true)

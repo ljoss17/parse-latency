@@ -5,6 +5,9 @@ use std::fs::read_to_string;
 use parser::per_chain::parse_per_chain_infos;
 use parser::total::parse_total_infos;
 
+use crate::parser::parsed_per_chain::parse_per_chain_infos_with_filter;
+use crate::parser::parsed_total::parse_total_infos_with_filter;
+
 pub mod parser;
 pub mod utils;
 
@@ -18,7 +21,6 @@ pub struct TimerInfo {
 }
 
 impl From<Value> for TimerInfo {
-
     fn from(mut value: Value) -> Self {
         let mut infos = value.as_object().unwrap().clone();
         let raw_elapsed = value["elapsed"].take();
@@ -29,7 +31,6 @@ impl From<Value> for TimerInfo {
         infos.remove("name");
         let src_chain = value["src_chain"].take().to_string().replace('"', "");
         infos.remove("src_chain");
-
 
         let info = serde_json::Value::from(infos);
 
@@ -48,14 +49,26 @@ fn main() {
     let input_path = std::env::args().nth(1).unwrap();
     let text = read_to_string(input_path).unwrap();
 
+    let mut skip = 0;
     for raw_entry in text[1..].split_inclusive("}{") {
         let clean_entry = raw_entry.to_string()[0..raw_entry.len() - 2].to_string();
         let parsed_entry = format!("{{{clean_entry}}}");
-        let raw_json = serde_json::from_str::<Value>(&parsed_entry).unwrap();
-        let timer_info: TimerInfo = raw_json.into();
-        timer_infos.push(timer_info);
+        let raw_json = serde_json::from_str::<Value>(&parsed_entry);
+        match raw_json {
+            Ok(raw_json) => {
+                let timer_info: TimerInfo = raw_json.into();
+                timer_infos.push(timer_info);
+            }
+            Err(_) => {
+                skip += 1;
+            }
+        }
     }
 
+    println!("Skipped {skip} entries");
+
     parse_total_infos(timer_infos.clone());
-    parse_per_chain_infos(timer_infos);
+    parse_per_chain_infos(timer_infos.clone());
+    parse_total_infos_with_filter(timer_infos.clone());
+    parse_per_chain_infos_with_filter(timer_infos);
 }

@@ -22,7 +22,7 @@ struct TimerStatistics {
     q90: u128,
 }
 
-pub fn parse_total_infos(infos: Vec<TimerInfo>) {
+pub fn parse_total_infos_with_filter(infos: Vec<TimerInfo>) {
     let mut elapsed_values: HashMap<String, Vec<u128>> = HashMap::new();
     for info in infos {
         match elapsed_values.get(&info.name) {
@@ -41,17 +41,24 @@ pub fn parse_total_infos(infos: Vec<TimerInfo>) {
     for name in elapsed_values.keys().sorted() {
         let mut values = elapsed_values[name].clone();
         values.sort();
+        let mean = compute_mean(&values);
+        let std_dev = std_deviation(&values, mean);
+        let parsed_values: Vec<u128> = values
+            .iter()
+            .filter(|v| z_score(**v, mean, std_dev, 3.0))
+            .cloned()
+            .collect();
         let statistic = TimerStatistics {
             name: name.clone(),
-            count: values.len() as u128,
-            mean: compute_mean(&values),
-            min: compute_min(&values),
-            max: compute_max(&values),
-            q10: compute_percentile(&values, 0.1),
-            q25: compute_percentile(&values, 0.25),
-            q75: compute_percentile(&values, 0.75),
-            q90: compute_percentile(&values, 0.9),
-            median: compute_percentile(&values, 0.5),
+            count: parsed_values.len() as u128,
+            mean: compute_mean(&parsed_values),
+            min: compute_min(&parsed_values),
+            max: compute_max(&parsed_values),
+            q10: compute_percentile(&parsed_values, 0.1),
+            q25: compute_percentile(&parsed_values, 0.25),
+            q75: compute_percentile(&parsed_values, 0.75),
+            q90: compute_percentile(&parsed_values, 0.9),
+            median: compute_percentile(&parsed_values, 0.5),
         };
         statistics.push(statistic);
     }
@@ -61,7 +68,7 @@ pub fn parse_total_infos(infos: Vec<TimerInfo>) {
         Err(_) => format!("{statistics:?}"), // Fallback to debug printing
     };
 
-    let file_name = Path::new("outputs/statistics.json");
+    let file_name = Path::new("outputs/parsed_statistics.json");
 
     let mut file = OpenOptions::new()
         .write(true)
