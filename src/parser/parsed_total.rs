@@ -20,6 +20,7 @@ struct TimerStatistics {
     median: u128,
     q75: u128,
     q90: u128,
+    total: f64,
 }
 
 pub fn parse_total_infos_with_filter(infos: Vec<TimerInfo>) {
@@ -59,6 +60,7 @@ pub fn parse_total_infos_with_filter(infos: Vec<TimerInfo>) {
             q75: compute_percentile(&parsed_values, 0.75),
             q90: compute_percentile(&parsed_values, 0.9),
             median: compute_percentile(&parsed_values, 0.5),
+            total: compute_total_minutes(&parsed_values),
         };
         statistics.push(statistic);
     }

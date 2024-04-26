@@ -2,6 +2,10 @@ pub fn compute_mean(values: &Vec<u128>) -> f64 {
     values.iter().sum::<u128>() as f64 / values.len() as f64
 }
 
+pub fn compute_total_minutes(values: &[u128]) -> f64 {
+    values.iter().sum::<u128>() as f64 / 60000f64
+}
+
 pub fn compute_min(values: &[u128]) -> u128 {
     match values.iter().min() {
         Some(min) => *min,

@@ -50,8 +50,9 @@ fn main() {
     let text = read_to_string(input_path).unwrap();
 
     let mut skip = 0;
-    for raw_entry in text[1..].split_inclusive("}{") {
-        let clean_entry = raw_entry.to_string()[0..raw_entry.len() - 2].to_string();
+    for raw_entry in text[1..].split_inclusive("}\n{") {
+        let clean_entry = raw_entry.to_string()[0..raw_entry.len() - 3].to_string();
+        println!("clean_entry: {clean_entry}");
         let parsed_entry = format!("{{{clean_entry}}}");
         let raw_json = serde_json::from_str::<Value>(&parsed_entry);
         match raw_json {
