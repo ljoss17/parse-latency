@@ -29,7 +29,11 @@ impl From<Value> for TimerInfo {
 
         let name = value["name"].take().to_string().replace('"', "");
         infos.remove("name");
-        let src_chain = value["src_chain"].take().to_string().replace('"', "");
+        let src_chain = if let Some(src_chain) = value.get("src_chain") {
+            src_chain.to_string().replace('"', "")
+        } else {
+            value["chain"].take().to_string().replace('"', "")
+        };
         infos.remove("src_chain");
 
         let info = serde_json::Value::from(infos);
