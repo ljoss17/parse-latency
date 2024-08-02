@@ -1,3 +1,10 @@
+use std::fs::OpenOptions;
+use std::io::Write;
+use std::path::Path;
+
+use crate::error::Error;
+use crate::parser::utils::FailedEntry;
+
 pub fn compute_mean(values: &[u128]) -> f64 {
     values.iter().sum::<u128>() as f64 / values.len() as f64
 }
@@ -33,7 +40,11 @@ pub fn std_deviation(values: &[u128], mean: f64) -> f64 {
         let deviation = v - mean;
         variance += deviation.powf(2.0);
     }
-    let variance = variance / (values.len() - 1) as f64;
+    let variance = if values.len() == 1 {
+        variance
+    } else {
+        variance / (values.len() - 1) as f64
+    };
 
     variance.sqrt()
 }
@@ -52,6 +63,23 @@ pub fn z_score(value: u128, mean: f64, std_dev: f64, threshold: f64) -> bool {
     false
 }
 
+pub fn store_logs(name_prefix: &str, logs: Vec<FailedEntry>) -> Result<(), Error> {
+    let raw_file_name = format!("outputs/{name_prefix}_logs");
+    let file_name = Path::new(&raw_file_name);
+
+    let json_str = serde_json::to_string_pretty(&logs).map_err(Error::serde_parse)?;
+
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(file_name)
+        .map_err(Error::io)?;
+
+    writeln!(file, "{}", json_str).map_err(Error::io)
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 

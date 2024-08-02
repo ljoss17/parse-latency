@@ -5,6 +5,7 @@ use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::path::Path;
 
+use crate::error::Error;
 use crate::utils::*;
 use crate::TimerInfo;
 
@@ -23,7 +24,10 @@ struct TimerStatistics {
     total: f64,
 }
 
-pub fn parse_total_infos_with_filter(infos: Vec<TimerInfo>) {
+pub fn parse_total_infos_with_filter(
+    infos: Vec<TimerInfo>,
+    name_prefix: &String,
+) -> Result<(), Error> {
     let mut elapsed_values: HashMap<String, Vec<u128>> = HashMap::new();
     for info in infos {
         match elapsed_values.get(&info.name) {
@@ -65,21 +69,17 @@ pub fn parse_total_infos_with_filter(infos: Vec<TimerInfo>) {
         statistics.push(statistic);
     }
 
-    let json_str = match serde_json::to_string_pretty(&statistics) {
-        Ok(value) => value,
-        Err(_) => format!("{statistics:?}"), // Fallback to debug printing
-    };
+    let json_str = serde_json::to_string_pretty(&statistics).map_err(Error::serde_parse)?;
 
-    let file_name = Path::new("outputs/parsed_statistics.json");
+    let raw_file_name = format!("outputs/{name_prefix}_parsed_statistics.json");
+    let file_name = Path::new(&raw_file_name);
 
     let mut file = OpenOptions::new()
         .write(true)
         .create(true)
         .truncate(true)
         .open(file_name)
-        .unwrap();
+        .map_err(Error::io)?;
 
-    if let Err(e) = writeln!(file, "{}", json_str) {
-        println!("Couldn't write to file: {}", e);
-    }
+    writeln!(file, "{}", json_str).map_err(Error::io)
 }
