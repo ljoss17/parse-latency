@@ -3,7 +3,6 @@ import json
 import matplotlib.pyplot as plt
 import os
 import pandas as pd
-import plotly.express as px
 
 def load_data_from_files(directory):
     for filename in os.listdir(directory):
@@ -15,6 +14,13 @@ def create_display(data, filename):
     df = pd.DataFrame(data)
     names = df['name'].unique()
     use_chain_as_label = 'chain' in df.columns
+
+    # Output directories
+    output_dir = "output/box_plots"
+
+    # Ensure the directory exists
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
     for name in names:
         name_data = df[df['name'] == name]
@@ -35,7 +41,7 @@ def create_display(data, filename):
             plt.ylabel('Time (ms)')
             plt.xticks(rotation=45)  # Rotate labels for better readability
             plt.tight_layout()  # Adjust layout for better fit
-            plt.savefig(f"output/{filename}_{name}.png")
+            plt.savefig(f"{output_dir}/{filename}_{name}.png")
 
 parser = argparse.ArgumentParser(description="Create Box Plot of parsed data")
 
