@@ -30,7 +30,7 @@ def create_display(data, filename):
             # Plot
             plt.figure(figsize=(12, 6))
             plt.boxplot(box_data, tick_labels=labels)
-            plt.title(f'Runtime Statistics for {name}')
+            plt.title(f'Runtime Statistics for {row["count"]} calls to {name}')
             plt.xlabel('Chain')
             plt.ylabel('Time (ms)')
             plt.xticks(rotation=45)  # Rotate labels for better readability
