@@ -1,16 +1,15 @@
 use error::Error;
+use indicatif::ProgressBar;
+use parser::extract::extract_data;
 use parser::utils::FailedEntry;
 use serde_derive::Deserialize;
 use serde_json::Value;
 use std::env;
 use std::fs::read_to_string;
-use utils::store_logs;
+use utils::{create_progress_bar_template, store_logs};
 
 use parser::per_chain::parse_per_chain_infos;
 use parser::total::parse_total_infos;
-
-use crate::parser::parsed_per_chain::parse_per_chain_infos_with_filter;
-use crate::parser::parsed_total::parse_total_infos_with_filter;
 
 pub mod error;
 pub mod parser;
@@ -69,8 +68,15 @@ fn main() -> Result<(), Error> {
         .ok_or_else(Error::missing_profiling_file)?;
     let text = read_to_string(input_path).map_err(Error::io)?;
 
+    let entries: Vec<&str> = text[1..].split_inclusive("}\n{").collect();
     let mut failed_entries = Vec::new();
-    for (line, raw_entry) in text[1..].split_inclusive("}\n{").enumerate() {
+
+    // Initialise progress bar
+    let pb = ProgressBar::new(entries.len() as u64);
+    pb.set_style(create_progress_bar_template());
+    pb.set_message("Extracting data from JSON file");
+
+    for (line, raw_entry) in entries.into_iter().enumerate() {
         let clean_entry = raw_entry.to_string()[0..raw_entry.len() - 3].to_string();
         let parsed_entry = format!("{{{clean_entry}}}");
         let raw_json = serde_json::from_str::<Value>(&parsed_entry);
@@ -84,14 +90,17 @@ fn main() -> Result<(), Error> {
                 failed_entries.push(failed_entry);
             }
         }
+        pb.inc(1);
     }
+    pb.set_message("Done");
+    pb.finish();
 
     store_logs(&name_prefix, failed_entries)?;
 
-    parse_total_infos(timer_infos.clone(), &name_prefix)?;
-    parse_per_chain_infos(timer_infos.clone(), &name_prefix)?;
-    parse_total_infos_with_filter(timer_infos.clone(), &name_prefix)?;
-    parse_per_chain_infos_with_filter(timer_infos, &name_prefix)?;
+    let extracted_data = extract_data(timer_infos);
+
+    parse_total_infos(extracted_data.total(), &name_prefix)?;
+    parse_per_chain_infos(extracted_data.per_chain(), &name_prefix)?;
 
     Ok(())
 }

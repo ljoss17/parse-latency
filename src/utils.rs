@@ -1,9 +1,24 @@
+use indicatif::ProgressStyle;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::Path;
 
 use crate::error::Error;
 use crate::parser::utils::FailedEntry;
+
+pub const PROGRESS_BAR_TEMPLATE: &str = "{msg}\n{bar} {pos}/{len} ({eta_precise})";
+
+pub fn create_progress_bar_template() -> ProgressStyle {
+    match ProgressStyle::with_template(PROGRESS_BAR_TEMPLATE) {
+        Ok(template) => template,
+        Err(e) => {
+            println!(
+                "Failed to create progress bar template, will fallback to default. Cause: {e}"
+            );
+            ProgressStyle::default_bar()
+        }
+    }
+}
 
 pub fn compute_mean(values: &[u128]) -> f64 {
     values.iter().sum::<u128>() as f64 / values.len() as f64
