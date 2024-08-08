@@ -59,7 +59,7 @@ pub fn parse_total_infos(
             q75: compute_percentile(&values, 0.75),
             q90: compute_percentile(&values, 0.9),
             median: compute_percentile(&values, 0.5),
-            total: compute_total_minutes(&values),
+            total: compute_total_seconds(&values),
         };
         statistics.push(statistic);
 
@@ -74,7 +74,7 @@ pub fn parse_total_infos(
             q75: compute_percentile(&parsed_values, 0.75),
             q90: compute_percentile(&parsed_values, 0.9),
             median: compute_percentile(&parsed_values, 0.5),
-            total: compute_total_minutes(&parsed_values),
+            total: compute_total_seconds(&parsed_values),
         };
         filtered_statistics.push(filtered_statistic);
         pb.inc(1);

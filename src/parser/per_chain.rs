@@ -22,6 +22,7 @@ struct PerChainTimerStatistics {
     median: u128,
     q75: u128,
     q90: u128,
+    total: f64,
 }
 
 pub fn parse_per_chain_infos(
@@ -60,6 +61,7 @@ pub fn parse_per_chain_infos(
             q75: compute_percentile(&values, 0.75),
             q90: compute_percentile(&values, 0.9),
             median: compute_percentile(&values, 0.5),
+            total: compute_total_seconds(&values),
         };
 
         // Filtered statistics
@@ -76,6 +78,7 @@ pub fn parse_per_chain_infos(
             q75: compute_percentile(&parsed_values, 0.75),
             q90: compute_percentile(&parsed_values, 0.9),
             median: compute_percentile(&parsed_values, 0.5),
+            total: compute_total_seconds(&parsed_values),
         };
         filtered_statistics.push(filtered_statistic);
 

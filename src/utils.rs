@@ -24,8 +24,8 @@ pub fn compute_mean(values: &[u128]) -> f64 {
     values.iter().sum::<u128>() as f64 / values.len() as f64
 }
 
-pub fn compute_total_minutes(values: &[u128]) -> f64 {
-    values.iter().sum::<u128>() as f64 / 60000f64
+pub fn compute_total_seconds(values: &[u128]) -> f64 {
+    values.iter().sum::<u128>() as f64 / 1000f64
 }
 
 pub fn compute_min(values: &[u128]) -> u128 {
@@ -112,8 +112,8 @@ mod tests {
     fn test_compute_total_minutes() {
         let values = [100, 100, 100, 100, 100, 100];
 
-        let computed_mean = compute_total_minutes(&values);
-        let expected_mean = 0.01;
+        let computed_mean = compute_total_seconds(&values);
+        let expected_mean = 0.6;
 
         assert_eq!(computed_mean, expected_mean);
     }
